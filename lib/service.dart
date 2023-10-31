@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 void backgroundTask(SendPort sendPort) {
-  Timer.periodic(Duration(seconds: 5), (Timer t) {
+  Timer.periodic(const Duration(seconds: 5), (Timer t) {
     sendPort.send('Arkaplanda çalışıyor: ${DateTime.now()}');
   });
 }

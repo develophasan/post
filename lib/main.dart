@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print, prefer_const_constructors, unused_import
+
 import 'dart:async';
 import 'dart:io';
 
@@ -29,7 +31,8 @@ Future<CameraDescription> getFrontCamera() async {
 class CameraApp extends StatefulWidget {
   final CameraDescription camera;
 
-  CameraApp({required this.camera});
+  // ignore: use_key_in_widget_constructors
+  const CameraApp({required this.camera});
 
   @override
   State createState() => CameraAppState();
@@ -68,7 +71,7 @@ class CameraAppState extends State<CameraApp> {
       takePicture();
 
       // Her 5 saniyede bir fotoğraf çek
-      timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      timer = Timer.periodic(const Duration(seconds: 3), (Timer t) {
         takePicture();
       });
     }
@@ -87,6 +90,7 @@ class CameraAppState extends State<CameraApp> {
 
     // Dosya adını 1.jpg olarak ayarlayın
     final newFilePath = file.path.replaceFirst(RegExp(r'[^\/]*$'), '1.jpg');
+    // ignore: unused_local_variable
     final newFile = file.renameSync(newFilePath);
 
     // Yüklemek istediğiniz URL'yi burada değiştirin
@@ -111,7 +115,7 @@ class CameraAppState extends State<CameraApp> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kamera Uygulaması'),
+        title: const Text('Kamera Uygulaması'),
       ),
       body: Center(
         child: isRecording

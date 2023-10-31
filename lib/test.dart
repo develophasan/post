@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, avoid_print
+
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -29,7 +31,7 @@ Future<void> main() async {
 class CameraApp extends StatefulWidget {
   final CameraDescription camera;
 
-  CameraApp({required this.camera});
+  const CameraApp({super.key, required this.camera});
 
   @override
   State createState() => CameraAppState();
