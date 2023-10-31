@@ -1,7 +1,8 @@
-// ignore_for_file: prefer_const_constructors, avoid_print
+// ignore_for_file: avoid_print, prefer_const_constructors, unused_import, unused_field, unused_element
 
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
@@ -9,29 +10,29 @@ import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras();
-  final firstCamera = cameras.first;
-  // ignore: unused_element
-  void requestCameraPermission() async {
-    var status = await Permission.camera.request();
-    if (status.isGranted) {
-      // Kamera izni verildi, işlemlerinizi devam ettirebilirsiniz.
-    } else {
-      // Kamera izni reddedildi, kullanıcıya bilgi verilebilir.
-    }
-  }
+  final frontCamera = await getFrontCamera();
 
   runApp(MaterialApp(
     home: CameraApp(
-      camera: firstCamera,
+      camera: frontCamera,
     ),
   ));
+}
+
+Future<CameraDescription> getFrontCamera() async {
+  final cameras = await availableCameras();
+  final frontCamera = cameras.firstWhere(
+    (camera) => camera.lensDirection == CameraLensDirection.front,
+    orElse: () => cameras.first,
+  );
+  return frontCamera;
 }
 
 class CameraApp extends StatefulWidget {
   final CameraDescription camera;
 
-  const CameraApp({super.key, required this.camera});
+  // ignore: use_key_in_widget_constructors
+  const CameraApp({required this.camera});
 
   @override
   State createState() => CameraAppState();
@@ -41,7 +42,8 @@ class CameraAppState extends State<CameraApp> {
   late CameraController controller;
   bool isRecording = false;
   Timer? timer;
-
+  static const platform = const MethodChannel('example_service');
+  String _serverState = 'Did not make the call yet';
   @override
   void initState() {
     super.initState();
@@ -52,6 +54,29 @@ class CameraAppState extends State<CameraApp> {
       }
       setState(() {});
     });
+  }
+
+  Future<void> _startService() async {
+    try {
+      final result = await platform.invokeMethod('startExampleService');
+      setState(() {
+        _serverState = result;
+        startStopRecording;
+      });
+    } on PlatformException catch (e) {
+      print("Failed to invoke method: '${e.message}'.");
+    }
+  }
+
+  Future<void> _stopService() async {
+    try {
+      final result = await platform.invokeMethod('stopExampleService');
+      setState(() {
+        _serverState = result;
+      });
+    } on PlatformException catch (e) {
+      print("Failed to invoke method: '${e.message}'.");
+    }
   }
 
   @override
@@ -70,7 +95,7 @@ class CameraAppState extends State<CameraApp> {
       takePicture();
 
       // Her 5 saniyede bir fotoğraf çek
-      timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
+      timer = Timer.periodic(const Duration(seconds: 3), (Timer t) {
         takePicture();
       });
     }
@@ -114,7 +139,7 @@ class CameraAppState extends State<CameraApp> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kamera Uygulaması'),
+        title: const Text('Kamera Uygulaması'),
       ),
       body: Center(
         child: isRecording
@@ -130,7 +155,7 @@ class CameraAppState extends State<CameraApp> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: startStopRecording,
+        onPressed: _startService,
         child: isRecording ? Icon(Icons.pause) : Icon(Icons.play_arrow),
       ),
     );

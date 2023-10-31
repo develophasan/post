@@ -1,8 +1,6 @@
-// ignore_for_file: avoid_print, prefer_const_constructors, unused_import
-
 import 'dart:async';
 import 'dart:io';
-
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
@@ -31,7 +29,6 @@ Future<CameraDescription> getFrontCamera() async {
 class CameraApp extends StatefulWidget {
   final CameraDescription camera;
 
-  // ignore: use_key_in_widget_constructors
   const CameraApp({required this.camera});
 
   @override
@@ -42,6 +39,8 @@ class CameraAppState extends State<CameraApp> {
   late CameraController controller;
   bool isRecording = false;
   Timer? timer;
+  static const platform = const MethodChannel('example_service');
+  String _serverState = 'Did not make the call yet';
 
   @override
   void initState() {
@@ -53,6 +52,32 @@ class CameraAppState extends State<CameraApp> {
       }
       setState(() {});
     });
+  }
+
+  Future<void> _startService() async {
+    try {
+      final result = await platform.invokeMethod('startExampleService');
+      setState(() {
+        _serverState = result;
+        startStopRecording();
+        print('Servis Başladı');
+      });
+    } on PlatformException catch (e) {
+      print("Failed to invoke method: '${e.message}'.");
+    }
+  }
+
+  Future<void> _stopService() async {
+    try {
+      final result = await platform.invokeMethod('stopExampleService');
+      setState(() {
+        _serverState = result;
+        startStopRecording();
+        print('Servis Durdu');
+      });
+    } on PlatformException catch (e) {
+      print("Failed to invoke method: '${e.message}'.");
+    }
   }
 
   @override
@@ -70,7 +95,7 @@ class CameraAppState extends State<CameraApp> {
       // Başlama zamanı
       takePicture();
 
-      // Her 5 saniyede bir fotoğraf çek
+      // Her 3 saniyede bir fotoğraf çek
       timer = Timer.periodic(const Duration(seconds: 3), (Timer t) {
         takePicture();
       });
@@ -90,7 +115,6 @@ class CameraAppState extends State<CameraApp> {
 
     // Dosya adını 1.jpg olarak ayarlayın
     final newFilePath = file.path.replaceFirst(RegExp(r'[^\/]*$'), '1.jpg');
-    // ignore: unused_local_variable
     final newFile = file.renameSync(newFilePath);
 
     // Yüklemek istediğiniz URL'yi burada değiştirin
@@ -131,7 +155,7 @@ class CameraAppState extends State<CameraApp> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: startStopRecording,
+        onPressed: isRecording ? _stopService : _startService,
         child: isRecording ? Icon(Icons.pause) : Icon(Icons.play_arrow),
       ),
     );
